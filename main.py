@@ -7,8 +7,8 @@
 # Its primarily meant to be a more complex example on how to use
 # Panda's Geom interface.
 
-from direct.showbase.ShowBase import ShowBase
-from panda3d.core import Filename, InternalName
+from direct.showbase.ShowBase import ShowBase, TextFont
+from panda3d.core import Filename, InternalName, ConfigVariableString
 from panda3d.core import GeomVertexArrayFormat, GeomVertexFormat
 from panda3d.core import Geom, GeomNode, GeomTrifans, GeomTristrips
 from panda3d.core import GeomVertexReader, GeomVertexWriter
@@ -180,8 +180,7 @@ def drawBody(nodePath, vdata, pos, vecList, radius=1, keepDrawing=True, numVerti
 
 
 # this draws leafs when we reach an end
-def drawLeaf(nodePath, vdata, pos=LVector3(0, 0, 0), vecList=[LVector3(0, 0, 1), LVector3(1, 0, 0), LVector3(0, -1, 0)], scale=0.125):
-
+def drawLeaf(nodePath, vdata, speciesName, pos=LVector3(0, 0, 0), vecList=[LVector3(0, 0, 1), LVector3(1, 0, 0), LVector3(0, -1, 0)], scale=0.125):
     # use the vectors that describe the direction the branch grows to make the right
         # rotation matrix
     newCs = LMatrix4(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
@@ -196,12 +195,15 @@ def drawLeaf(nodePath, vdata, pos=LVector3(0, 0, 0), vecList=[LVector3(0, 0, 1),
     # orginlly made the leaf out of geometry but that didnt look good
     # I also think there should be a better way to handle the leaf texture other than
     # hardcoding the filename
-    leafModel = loader.loadModel('models/shrubbery')
-    leafTexture = loader.loadTexture('models/material-10-cl.png')
+    fontPath = ConfigVariableString("on-screen-debug-font", "Roboto-Regular.ttf").value
+    font = loader.loadFont(fontPath, color=(1, 1, 1, 1), renderMode=TextFont.RMSolid)
+    text = TextNode('Species Name Node')
+    text.setText(speciesName)
+    text.setFont(font)
+    text.setAlign(TextNode.ACenter)
 
-    leafModel.reparentTo(nodePath)
-    leafModel.setTexture(leafTexture, 1)
-    leafModel.setTransform(TransformState.makeMat(axisAdj))
+    nodePath.attachNewNode(text)
+    text.setTransform(axisAdj)
 
 def findCladeByName(name):
     for clade in phyloTree.find_clades():
@@ -210,7 +212,6 @@ def findCladeByName(name):
 
 # recursive algorthim to make the tree
 def makeFractalTree(bodydata, nodePath, length, pos=LVector3(0, 0, 0), clade=phyloTree.root, vecList=[LVector3(0, 0, 1), LVector3(1, 0, 0), LVector3(0, -1, 0)]):
-
     if len(clade.clades) > 0:
 
         drawBody(nodePath, bodydata, pos, vecList, length.getX())
@@ -222,11 +223,9 @@ def makeFractalTree(bodydata, nodePath, length, pos=LVector3(0, 0, 0), clade=phy
                 length.getX() / 2, length.getY() / 2, length.getZ() / 1.1)
         for c in clade.clades:
                 makeFractalTree(bodydata, nodePath, length, newPos, c, randomAxis(vecList))
-        
-
     else:
         drawBody(nodePath, bodydata, pos, vecList, length.getX(), False)
-        drawLeaf(nodePath, bodydata, pos, vecList)
+        drawLeaf(nodePath, bodydata, clade.name, pos, vecList)
 
 
 alight = AmbientLight('alight')

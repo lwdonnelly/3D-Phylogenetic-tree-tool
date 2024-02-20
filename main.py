@@ -6,9 +6,9 @@
 # This demo shows how to make quasi-fractal trees in Panda.
 # Its primarily meant to be a more complex example on how to use
 # Panda's Geom interface.
-
+from direct.gui.DirectLabel import DirectLabel, BillboardEffect
 from direct.showbase.ShowBase import ShowBase, TextFont
-from panda3d.core import Filename, InternalName, ConfigVariableString
+from panda3d.core import Filename, InternalName, ConfigVariableString, PandaNode
 from panda3d.core import GeomVertexArrayFormat, GeomVertexFormat
 from panda3d.core import Geom, GeomNode, GeomTrifans, GeomTristrips
 from panda3d.core import GeomVertexReader, GeomVertexWriter
@@ -31,7 +31,8 @@ base = ShowBase()
 base.disableMouse()
 base.camera.setPos(0, -180, 30)
 numPrimitives = 0
-phyloTree = Phylo.read('reptile-tree.xml', 'phyloxml')
+phyloTree = Phylo.read('tree-of-life.xml', 'phyloxml')
+#phyloTree = Phylo.read('reptile-tree.xml', 'phyloxml')
 phyloTree.ladderize()
 Phylo.draw_ascii(phyloTree)
 
@@ -192,6 +193,9 @@ def drawLeaf(nodePath, vdata, speciesName, pos=LVector3(0, 0, 0), vecList=[LVect
 
     axisAdj = LMatrix4.scaleMat(scale) * newCs * LMatrix4.translateMat(pos)
 
+    textNodeContainer = PandaNode("testNode")
+    textNodeContainer.setTransform(TransformState.makeMat(axisAdj))
+
     # orginlly made the leaf out of geometry but that didnt look good
     # I also think there should be a better way to handle the leaf texture other than
     # hardcoding the filename
@@ -201,9 +205,11 @@ def drawLeaf(nodePath, vdata, speciesName, pos=LVector3(0, 0, 0), vecList=[LVect
     text.setText(speciesName)
     text.setFont(font)
     text.setAlign(TextNode.ACenter)
+    billboard_effect = BillboardEffect.makePointEye()
+    text.setEffect(billboard_effect)
 
-    nodePath.attachNewNode(text)
-    text.setTransform(axisAdj)
+    textNodeContainer.addChild(text)
+    nodePath.attachNewNode(textNodeContainer)
 
 def findCladeByName(name):
     for clade in phyloTree.find_clades():
@@ -220,10 +226,14 @@ def makeFractalTree(bodydata, nodePath, length, pos=LVector3(0, 0, 0), clade=phy
         newPos = pos + vecList[0] * length.length()
 
         length = LVector3(
-                length.getX() / 2, length.getY() / 2, length.getZ() / 1.1)
+                length.getX() / 1.65, length.getY() / 1.65, length.getZ() / 1.1)
         for c in clade.clades:
                 makeFractalTree(bodydata, nodePath, length, newPos, c, randomAxis(vecList))
     else:
+        drawBody(nodePath, bodydata, pos, vecList, length.getX())
+        pos = pos + vecList[0] * length.length()
+        length = LVector3(
+            length.getX() / 1.65, length.getY() / 1.65, length.getZ() / 1.1)
         drawBody(nodePath, bodydata, pos, vecList, length.getX(), False)
         drawLeaf(nodePath, bodydata, clade.name, pos, vecList)
 
@@ -272,7 +282,7 @@ class MyTapper(DirectObject):
 
         self.barkTexture = loader.loadTexture("barkTexture.jpg")
         treeNodePath = NodePath("Tree Holder")
-        makeFractalTree(bodydata, treeNodePath, LVector3(4, 4, 7), clade=findCladeByName("Sauria"))
+        makeFractalTree(bodydata, treeNodePath, LVector3(4, 4, 7))
 
         treeNodePath.setTexture(self.barkTexture, 1)
         treeNodePath.reparentTo(render)
@@ -354,7 +364,7 @@ class MyTapper(DirectObject):
         bodydata = GeomVertexData("body vertices", self.format, Geom.UHStatic)
 
         treeNodePath = NodePath("Tree Holder")
-        makeFractalTree(bodydata, treeNodePath, LVector3(4, 4, 7), LVector3(0, 0, 0), clade=findCladeByName("Sauria"))
+        makeFractalTree(bodydata, treeNodePath, LVector3(4, 4, 7), LVector3(0, 0, 0))
 
         treeNodePath.setTexture(self.barkTexture, 1)
         treeNodePath.reparentTo(render)

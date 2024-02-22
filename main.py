@@ -95,7 +95,7 @@ def smallRandomAxis(vecList):
 # triangles to form the body.
 # this keepDrawing paramter tells the function wheter or not we're at an end
 # if the vertices before you were an end, dont draw branches to it
-def drawBody(nodePath, vdata, pos, vecList, radius=1, keepDrawing=True, numVertices=8):
+def drawBody(nodePath, vdata, cladeName, pos, vecList, radius=1, keepDrawing=True, numVertices=8):
 
     circleGeom = Geom(vdata)
 
@@ -167,7 +167,7 @@ def drawBody(nodePath, vdata, pos, vecList, radius=1, keepDrawing=True, numVerti
         lines.decompose()
         circleGeom.addPrimitive(lines)
 
-        circleGeomNode = GeomNode("Debug")
+        circleGeomNode = GeomNode(cladeName if cladeName is not None else "noName")
         circleGeomNode.addGeom(circleGeom)
 
         # I accidentally made the front-face face inwards. Make reverse makes the tree render properly and
@@ -176,6 +176,11 @@ def drawBody(nodePath, vdata, pos, vecList, radius=1, keepDrawing=True, numVerti
         circleGeomNode.setAttrib(CullFaceAttrib.makeReverse(), 1)
         global numPrimitives
         numPrimitives += numVertices * 2
+
+        # if cladeName is not None:
+        #     axisAdj = LMatrix4.scaleMat(radius) * LMatrix4.translateMat(pos)
+        #     textNodeContainer = PandaNode("testNode")
+        #     textNodeContainer.setTransform(TransformState.makeMat(axisAdj))
 
         nodePath.attachNewNode(circleGeomNode)
 
@@ -193,7 +198,7 @@ def drawLeaf(nodePath, vdata, speciesName, pos=LVector3(0, 0, 0), vecList=[LVect
 
     axisAdj = LMatrix4.scaleMat(scale) * newCs * LMatrix4.translateMat(pos)
 
-    textNodeContainer = PandaNode("testNode")
+    textNodeContainer = PandaNode(speciesName + "Container")
     textNodeContainer.setTransform(TransformState.makeMat(axisAdj))
 
     # orginlly made the leaf out of geometry but that didnt look good
@@ -201,7 +206,7 @@ def drawLeaf(nodePath, vdata, speciesName, pos=LVector3(0, 0, 0), vecList=[LVect
     # hardcoding the filename
     fontPath = ConfigVariableString("on-screen-debug-font", "Roboto-Regular.ttf").value
     font = loader.loadFont(fontPath, color=(1, 1, 1, 1), renderMode=TextFont.RMSolid)
-    text = TextNode('Species Name Node')
+    text = TextNode(speciesName)
     text.setText(speciesName)
     text.setFont(font)
     text.setAlign(TextNode.ACenter)
@@ -220,7 +225,7 @@ def findCladeByName(name):
 def makeFractalTree(bodydata, nodePath, length, pos=LVector3(0, 0, 0), clade=phyloTree.root, vecList=[LVector3(0, 0, 1), LVector3(1, 0, 0), LVector3(0, -1, 0)]):
     if len(clade.clades) > 0:
 
-        drawBody(nodePath, bodydata, pos, vecList, length.getX())
+        drawBody(nodePath, bodydata, clade.name, pos, vecList, length.getX())
 
         # move foward along the right axis
         newPos = pos + vecList[0] * length.length()
@@ -230,11 +235,11 @@ def makeFractalTree(bodydata, nodePath, length, pos=LVector3(0, 0, 0), clade=phy
         for c in clade.clades:
                 makeFractalTree(bodydata, nodePath, length, newPos, c, randomAxis(vecList))
     else:
-        drawBody(nodePath, bodydata, pos, vecList, length.getX())
+        drawBody(nodePath, bodydata, clade.name, pos, vecList, length.getX())
         pos = pos + vecList[0] * length.length()
         length = LVector3(
             length.getX() / 1.65, length.getY() / 1.65, length.getZ() / 1.1)
-        drawBody(nodePath, bodydata, pos, vecList, length.getX(), False)
+        drawBody(nodePath, bodydata, clade.name, pos, vecList, length.getX(), False)
         drawLeaf(nodePath, bodydata, clade.name, pos, vecList)
 
 

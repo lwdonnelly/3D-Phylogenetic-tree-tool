@@ -35,7 +35,9 @@ numPrimitives = 0
 #phyloTree = Phylo.read('tree-of-life.xml', 'phyloxml')
 phyloTree = Phylo.read('reptile-tree.xml', 'phyloxml')
 #phyloTree = Phylo.read('apaf.xml', 'phyloxml')
+phyloTree.ladderize()
 Phylo.draw_ascii(phyloTree)
+selectedCladeName = None
 
 title = OnscreenText(text="Click on a branch for clade name",
                      style=1, fg=(1, 1, 1, 1), parent=base.a2dBottomCenter,
@@ -46,7 +48,7 @@ qEvent = OnscreenText(
     style=1, fg=(1, 1, 1, 1), pos=(0.06, -0.10),
     scale=.05)
 wEvent = OnscreenText(
-    text="T: Add Another Tree",
+    text="T: Add Another Tree With Selected Clade as Root",
     parent=base.a2dTopLeft, align=TextNode.ALeft,
     style=1, fg=(1, 1, 1, 1), pos=(0.06, -0.16),
     scale=.05)
@@ -398,8 +400,13 @@ class MyTapper(DirectObject):
         # randomPlace.normalize()
 
         treeNodePath = NodePath("Tree Holder")
+
+        rootClade = phyloTree.root
+        if selectedCladeName is not None:
+            rootClade = findCladeByName(selectedCladeName)
+
         makeFractalTree(bodydata, treeNodePath, LVector3(
-            4, 4, 7), randomPlace)
+            4, 4, 7), rootClade.name, randomPlace, rootClade)
 
         treeNodePath.setTexture(self.barkTexture, 1)
         treeNodePath.reparentTo(render)
@@ -424,6 +431,8 @@ class MyTapper(DirectObject):
             base.cHandler.sortEntries()
             pickedObj = base.cHandler.getEntry(0).getIntoNodePath()
             title.text = pickedObj.name
+            global selectedCladeName
+            selectedCladeName = pickedObj.name
 
     def move(self, task):
         # Get the time that elapsed since last frame.  We multiply this with

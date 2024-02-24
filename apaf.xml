@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phyloxml xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+   xsi:schemaLocation="http://www.phyloxml.org http://www.phyloxml.org/1.10/phyloxml.xsd"
+   xmlns="http://www.phyloxml.org">
+   <phylogeny rooted="true">
+   <name>Apaf</name>
+      <clade>
+         <name>test</name>
+         <clade>
+            <name>test2</name>
+            <clade>
+               <name>test3</name>
+            </clade>
+            <clade>
+               <name>test4</name>
+            </clade>
+            <clade>
+               <name>test5</name>
+               <clade>
+               <name>test6</name>
+            </clade>
+            </clade>
+         </clade>
+         <clade>
+               <name>test7</name>
+            </clade>
+      </clade>
+
+   </phylogeny>
+</phyloxml>

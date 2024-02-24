@@ -32,8 +32,9 @@ base = ShowBase()
 base.disableMouse()
 base.camera.setPos(0, -180, 30)
 numPrimitives = 0
-phyloTree = Phylo.read('tree-of-life.xml', 'phyloxml')
+#phyloTree = Phylo.read('tree-of-life.xml', 'phyloxml')
 #phyloTree = Phylo.read('reptile-tree.xml', 'phyloxml')
+phyloTree = Phylo.read('apaf.xml', 'phyloxml')
 Phylo.draw_ascii(phyloTree)
 
 title = OnscreenText(text="Panda3D: Tutorial - Procedurally Making a Tree",
@@ -222,10 +223,10 @@ def findCladeByName(name):
             return clade
 
 # recursive algorthim to make the tree
-def makeFractalTree(bodydata, nodePath, length, pos=LVector3(0, 0, 0), clade=phyloTree.root, vecList=[LVector3(0, 0, 1), LVector3(1, 0, 0), LVector3(0, -1, 0)]):
+def makeFractalTree(bodydata, nodePath, length, cladeName=phyloTree.root.name, pos=LVector3(0, 0, 0), clade=phyloTree.root, vecList=[LVector3(0, 0, 1), LVector3(1, 0, 0), LVector3(0, -1, 0)]):
     if len(clade.clades) > 0:
 
-        drawBody(nodePath, bodydata, clade.name, pos, vecList, length.getX())
+        drawBody(nodePath, bodydata, cladeName, pos, vecList, length.getX())
 
         # move foward along the right axis
         newPos = pos + vecList[0] * length.length()
@@ -233,9 +234,9 @@ def makeFractalTree(bodydata, nodePath, length, pos=LVector3(0, 0, 0), clade=phy
         length = LVector3(
                 length.getX() / 1.65, length.getY() / 1.65, length.getZ() / 1.1)
         for c in clade.clades:
-                makeFractalTree(bodydata, nodePath, length, newPos, c, randomAxis(vecList))
+                makeFractalTree(bodydata, nodePath, length, clade.name, newPos, c, randomAxis(vecList))
     else:
-        drawBody(nodePath, bodydata, clade.name, pos, vecList, length.getX())
+        drawBody(nodePath, bodydata, cladeName, pos, vecList, length.getX())
         pos = pos + vecList[0] * length.length()
         length = LVector3(
             length.getX() / 1.65, length.getY() / 1.65, length.getZ() / 1.1)

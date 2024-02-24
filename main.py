@@ -33,13 +33,13 @@ base.disableMouse()
 base.camera.setPos(0, -180, 30)
 numPrimitives = 0
 #phyloTree = Phylo.read('tree-of-life.xml', 'phyloxml')
-#phyloTree = Phylo.read('reptile-tree.xml', 'phyloxml')
-phyloTree = Phylo.read('apaf.xml', 'phyloxml')
+phyloTree = Phylo.read('reptile-tree.xml', 'phyloxml')
+#phyloTree = Phylo.read('apaf.xml', 'phyloxml')
 Phylo.draw_ascii(phyloTree)
 
-title = OnscreenText(text="Panda3D: Tutorial - Procedurally Making a Tree",
+title = OnscreenText(text="Click on a branch for clade name",
                      style=1, fg=(1, 1, 1, 1), parent=base.a2dBottomCenter,
-                     pos=(0, 0.1), scale=.08)
+                     pos=(0, 0.1), scale=.08, mayChange=True)
 qEvent = OnscreenText(
     text="Q: Start Scene Over",
     parent=base.a2dTopLeft, align=TextNode.ALeft,
@@ -423,7 +423,7 @@ class MyTapper(DirectObject):
             # This is so we get the closest object
             base.cHandler.sortEntries()
             pickedObj = base.cHandler.getEntry(0).getIntoNodePath()
-            print(pickedObj)
+            title.text = pickedObj.name
 
     def move(self, task):
         # Get the time that elapsed since last frame.  We multiply this with

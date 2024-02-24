@@ -8,7 +8,8 @@
 # Panda's Geom interface.
 from direct.gui.DirectLabel import DirectLabel, BillboardEffect
 from direct.showbase.ShowBase import ShowBase, TextFont
-from panda3d.core import Filename, InternalName, ConfigVariableString, PandaNode
+from panda3d.core import Filename, InternalName, ConfigVariableString, PandaNode, CollisionNode, CollisionRay, \
+    CollisionHandlerEvent, CollisionTraverser, CollisionHandlerQueue
 from panda3d.core import GeomVertexArrayFormat, GeomVertexFormat
 from panda3d.core import Geom, GeomNode, GeomTrifans, GeomTristrips
 from panda3d.core import GeomVertexReader, GeomVertexWriter
@@ -33,7 +34,6 @@ base.camera.setPos(0, -180, 30)
 numPrimitives = 0
 phyloTree = Phylo.read('tree-of-life.xml', 'phyloxml')
 #phyloTree = Phylo.read('reptile-tree.xml', 'phyloxml')
-phyloTree.ladderize()
 Phylo.draw_ascii(phyloTree)
 
 title = OnscreenText(text="Panda3D: Tutorial - Procedurally Making a Tree",
@@ -301,6 +301,7 @@ class MyTapper(DirectObject):
 
         self.accept("q", self.regenTree)
         self.accept("t", self.addTree)
+        self.accept("mouse1", self.leftClick)
         self.accept("arrow_up", self.upIterations)
         self.accept("arrow_down", self.downIterations)
         self.accept("arrow_right", self.upCopies)
@@ -336,6 +337,20 @@ class MyTapper(DirectObject):
             parent=base.a2dTopLeft, align=TextNode.ALeft,
             style=1, fg=(1, 1, 1, 1), pos=(0.06, -0.28),
             scale=.05, mayChange=True)
+
+        handler = CollisionHandlerQueue()
+        traverser = CollisionTraverser('traverser name')
+
+        pickerNode = CollisionNode('mouseRay')
+        pickerNP = camera.attachNewNode(pickerNode)
+        pickerNode.setFromCollideMask(GeomNode.getDefaultCollideMask())
+        pickerRay = CollisionRay()
+        pickerNode.addSolid(pickerRay)
+        traverser.addCollider(pickerNP, handler)
+
+        base.cTrav = traverser
+        base.cHandler = handler
+        base.pickerRay = pickerRay
         
 
     # Records the state of the arrow keys
@@ -387,6 +402,27 @@ class MyTapper(DirectObject):
 
         treeNodePath.setTexture(self.barkTexture, 1)
         treeNodePath.reparentTo(render)
+
+    def leftClick(self):
+        # First we check that the mouse is not outside the screen.
+        if base.mouseWatcherNode.hasMouse():
+            # This gives up the screen coordinates of the mouse.
+            mpos = base.mouseWatcherNode.getMouse()
+
+        # This makes the ray's origin the camera and makes the ray point
+        # to the screen coordinates of the mouse.
+        base.pickerRay.setFromLens(base.camNode, mpos.x, mpos.y)
+
+        mpos = base.mouseWatcherNode.getMouse()
+        base.pickerRay.setFromLens(base.camNode, mpos.getX(), mpos.getY())
+
+        base.cTrav.traverse(render)
+        # Assume for simplicity's sake that myHandler is a CollisionHandlerQueue.
+        if base.cHandler.getNumEntries() > 0:
+            # This is so we get the closest object
+            base.cHandler.sortEntries()
+            pickedObj = base.cHandler.getEntry(0).getIntoNodePath()
+            print(pickedObj)
 
     def move(self, task):
         # Get the time that elapsed since last frame.  We multiply this with

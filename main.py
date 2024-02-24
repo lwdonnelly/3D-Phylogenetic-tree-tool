@@ -32,8 +32,8 @@ base = ShowBase()
 base.disableMouse()
 base.camera.setPos(0, -180, 30)
 numPrimitives = 0
-#phyloTree = Phylo.read('tree-of-life.xml', 'phyloxml')
-phyloTree = Phylo.read('reptile-tree.xml', 'phyloxml')
+phyloTree = Phylo.read('tree-of-life.xml', 'phyloxml')
+#phyloTree = Phylo.read('reptile-tree.xml', 'phyloxml')
 #phyloTree = Phylo.read('apaf.xml', 'phyloxml')
 phyloTree.ladderize()
 Phylo.draw_ascii(phyloTree)
@@ -170,7 +170,7 @@ def drawBody(nodePath, vdata, cladeName, pos, vecList, radius=1, keepDrawing=Tru
         lines.decompose()
         circleGeom.addPrimitive(lines)
 
-        circleGeomNode = GeomNode(cladeName if cladeName is not None else "noName")
+        circleGeomNode = GeomNode(cladeName if cladeName is not None else "")
         circleGeomNode.addGeom(circleGeom)
 
         # I accidentally made the front-face face inwards. Make reverse makes the tree render properly and
@@ -179,11 +179,6 @@ def drawBody(nodePath, vdata, cladeName, pos, vecList, radius=1, keepDrawing=Tru
         circleGeomNode.setAttrib(CullFaceAttrib.makeReverse(), 1)
         global numPrimitives
         numPrimitives += numVertices * 2
-
-        # if cladeName is not None:
-        #     axisAdj = LMatrix4.scaleMat(radius) * LMatrix4.translateMat(pos)
-        #     textNodeContainer = PandaNode("testNode")
-        #     textNodeContainer.setTransform(TransformState.makeMat(axisAdj))
 
         nodePath.attachNewNode(circleGeomNode)
 
@@ -402,7 +397,7 @@ class MyTapper(DirectObject):
         treeNodePath = NodePath("Tree Holder")
 
         rootClade = phyloTree.root
-        if selectedCladeName is not None:
+        if selectedCladeName is not None and selectedCladeName != "":
             rootClade = findCladeByName(selectedCladeName)
 
         makeFractalTree(bodydata, treeNodePath, LVector3(
@@ -430,7 +425,7 @@ class MyTapper(DirectObject):
             # This is so we get the closest object
             base.cHandler.sortEntries()
             pickedObj = base.cHandler.getEntry(0).getIntoNodePath()
-            title.text = pickedObj.name
+            title.text = pickedObj.name if pickedObj.name != "" else "Selected Clade Has No Name"
             global selectedCladeName
             selectedCladeName = pickedObj.name
 

@@ -25,6 +25,8 @@ from direct.gui.OnscreenText import OnscreenText
 from direct.showbase.DirectObject import DirectObject
 import math
 import random
+from panda3d.core import LPoint3f
+from statistics import mean
 from Bio import Phylo
 
 random.seed()
@@ -32,8 +34,8 @@ base = ShowBase()
 base.disableMouse()
 base.camera.setPos(0, -180, 30)
 numPrimitives = 0
-phyloTree = Phylo.read('tree-of-life.xml', 'phyloxml')
-#phyloTree = Phylo.read('reptile-tree.xml', 'phyloxml')
+#phyloTree = Phylo.read('tree-of-life.xml', 'phyloxml')
+phyloTree = Phylo.read('reptile-tree.xml', 'phyloxml')
 #phyloTree = Phylo.read('apaf.xml', 'phyloxml')
 phyloTree.ladderize()
 Phylo.draw_ascii(phyloTree)
@@ -299,6 +301,7 @@ class MyTapper(DirectObject):
 
         self.accept("q", self.regenTree)
         self.accept("t", self.addTree)
+        self.accept("/", self.jumpToNode)
         self.accept("mouse1", self.leftClick)
         self.accept("arrow_up", self.upIterations)
         self.accept("arrow_down", self.downIterations)
@@ -405,6 +408,17 @@ class MyTapper(DirectObject):
 
         treeNodePath.setTexture(self.barkTexture, 1)
         treeNodePath.reparentTo(render)
+
+    def jumpToNode(self):
+        nodePath = render.find("**/" + selectedCladeName)
+        tightBounds = nodePath.getTightBounds()
+        meanX = mean([tightBounds[0].getXy().getX(), tightBounds[1].getXy().getX()])
+        meanY = mean([tightBounds[0].getXy().getY(), tightBounds[1].getXy().getY()])
+        meanZ = mean([tightBounds[0].getYz().getY(), tightBounds[1].getYz().getY()])
+        camera.setPos(LPoint3f(meanX, meanY, meanZ))
+        camera.setY(camera, -10)
+
+
 
     def leftClick(self):
         # First we check that the mouse is not outside the screen.

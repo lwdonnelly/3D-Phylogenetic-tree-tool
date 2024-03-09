@@ -410,12 +410,14 @@ class MyTapper(DirectObject):
         treeNodePath.reparentTo(render)
 
     def jumpToNode(self):
+        if selectedCladeName is None:
+            return
         nodePath = render.find("**/" + selectedCladeName)
         tightBounds = nodePath.getTightBounds()
-        meanX = mean([tightBounds[0].getXy().getX(), tightBounds[1].getXy().getX()])
-        meanY = mean([tightBounds[0].getXy().getY(), tightBounds[1].getXy().getY()])
-        meanZ = mean([tightBounds[0].getYz().getY(), tightBounds[1].getYz().getY()])
-        camera.setPos(LPoint3f(meanX, meanY, meanZ))
+        centeredX = mean([tightBounds[0].getXy().getX(), tightBounds[1].getXy().getX()])
+        centeredY = mean([tightBounds[0].getXy().getY(), tightBounds[1].getXy().getY()])
+        centeredZ = mean([tightBounds[0].getYz().getY(), tightBounds[1].getYz().getY()])
+        camera.setPos(LPoint3f(centeredX, centeredY, centeredZ))
         camera.setY(camera, -10)
 
 

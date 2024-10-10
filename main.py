@@ -6,7 +6,10 @@
 # This demo shows how to make quasi-fractal trees in Panda.
 # Its primarily meant to be a more complex example on how to use
 # Panda's Geom interface.
+import sys
+
 from direct.gui.DirectLabel import DirectLabel, BillboardEffect
+from direct.gui.DirectOptionMenu import DirectOptionMenu
 from direct.showbase.ShowBase import ShowBase, TextFont
 from panda3d.core import Filename, InternalName, ConfigVariableString, PandaNode, CollisionNode, CollisionRay, \
     CollisionHandlerEvent, CollisionTraverser, CollisionHandlerQueue
@@ -37,8 +40,14 @@ numPrimitives = 0
 #phyloTree = Phylo.read('tree-of-life.xml', 'phyloxml')
 phyloTree = Phylo.read('reptile-tree.xml', 'phyloxml')
 #phyloTree = Phylo.read('apaf.xml', 'phyloxml')
+depth = max(phyloTree.depths(unit_branch_lengths=True).values())
+#calculate modifier for a leaf node thickness of .025
+girthModifier = pow((1.0 + (depth * 40.0)), (1.0/depth))
+
 phyloTree.ladderize()
 Phylo.draw_ascii(phyloTree)
+print(girthModifier)
+print(depth)
 selectedCladeName = None
 
 title = OnscreenText(text="Click on a branch for clade name",
@@ -224,23 +233,22 @@ def findCladeByName(name):
 # recursive algorthim to make the tree
 def makeFractalTree(bodydata, nodePath, length, cladeName=phyloTree.root.name, pos=LVector3(0, 0, 0), clade=phyloTree.root, vecList=[LVector3(0, 0, 1), LVector3(1, 0, 0), LVector3(0, -1, 0)]):
     if len(clade.clades) > 0:
-
         drawBody(nodePath, bodydata, cladeName, pos, vecList, length.getX())
 
         # move foward along the right axis
         newPos = pos + vecList[0] * length.length()
 
         length = LVector3(
-                length.getX() / 1.65, length.getY() / 1.65, length.getZ() / 1.1)
+                length.getX() / girthModifier, length.getY() / girthModifier, length.getZ() / 1.1)
         for c in clade.clades:
                 makeFractalTree(bodydata, nodePath, length, clade.name, newPos, c, randomAxis(vecList))
     else:
         drawBody(nodePath, bodydata, cladeName, pos, vecList, length.getX())
-        pos = pos + vecList[0] * length.length()
+        newPos = pos + vecList[0] * length.length()
         length = LVector3(
-            length.getX() / 1.65, length.getY() / 1.65, length.getZ() / 1.1)
-        drawBody(nodePath, bodydata, clade.name, pos, vecList, length.getX(), False)
-        drawLeaf(nodePath, bodydata, clade.name, pos, vecList)
+            length.getX() / girthModifier, length.getY() / girthModifier, length.getZ() / 1.1)
+        drawBody(nodePath, bodydata, clade.name, newPos, randomAxis(vecList), length.getX(), False)
+        drawLeaf(nodePath, bodydata, clade.name, newPos, vecList)
 
 
 alight = AmbientLight('alight')
@@ -254,6 +262,7 @@ lens = PerspectiveLens()
 slight.setLens(lens)
 slnp = render.attachNewNode(slight)
 render.setLight(slnp)
+isMenuOpen = False
 
 slnp.setPos(0, 0, 40)
 
@@ -287,7 +296,7 @@ class MyTapper(DirectObject):
 
         self.barkTexture = loader.loadTexture("barkTexture.jpg")
         treeNodePath = NodePath("Tree Holder")
-        makeFractalTree(bodydata, treeNodePath, LVector3(4, 4, 7))
+        makeFractalTree(bodydata, treeNodePath, LVector3(depth, depth, depth * 2))
 
         treeNodePath.setTexture(self.barkTexture, 1)
         treeNodePath.reparentTo(render)
@@ -302,6 +311,7 @@ class MyTapper(DirectObject):
         self.accept("q", self.regenTree)
         self.accept("t", self.addTree)
         self.accept("/", self.jumpToNode)
+        self.accept("escape", self.toggleMenu)
         self.accept("mouse1", self.leftClick)
         self.accept("arrow_up", self.upIterations)
         self.accept("arrow_down", self.downIterations)
@@ -420,6 +430,21 @@ class MyTapper(DirectObject):
         camera.setPos(LPoint3f(centeredX, centeredY, centeredZ))
         camera.setY(camera, -10)
 
+    def itemSel(self, arg):
+        #print("Item Selected is: " + arg)
+        if arg == "exit":
+            sys.exit()
+
+
+
+    def toggleMenu(self):
+        global isMenuOpen
+        isMenuOpen = not isMenuOpen
+        if isMenuOpen:
+            menu = DirectOptionMenu(text="test", scale=0.1, command=self.itemSel,
+                                items=["exit"], initialitem=-1,
+                                highlightColor=(0.65, 0.65, 0.65, 1))
+
 
 
     def leftClick(self):
@@ -446,6 +471,8 @@ class MyTapper(DirectObject):
             selectedCladeName = pickedObj.name
 
     def move(self, task):
+        if isMenuOpen:
+            return
         # Get the time that elapsed since last frame.  We multiply this with
         # the desired speed in order to find out with which distance to move
         # in order to achieve that desired speed.

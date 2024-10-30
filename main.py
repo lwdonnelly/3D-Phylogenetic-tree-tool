@@ -345,7 +345,7 @@ class MyTapper(DirectObject):
 
         cm = CardMaker("plane")
         cm.setFrame(-2560, 2560, -2560, 2560)  # set the size here
-        cm.setColor(74.0, 103.0, 65.0, 1.0)
+        cm.setColor(.5, 1, .5, 1)
         plane = render.attachNewNode(cm.generate())
         plane.setP(-90.)
         
@@ -463,6 +463,8 @@ class MyTapper(DirectObject):
             # This is so we get the closest object
             base.cHandler.sortEntries()
             pickedObj = base.cHandler.getEntry(0).getIntoNodePath()
+            if (pickedObj.name == "plane" and base.cHandler.getNumEntries() > 1):
+                pickedObj = base.cHandler.getEntry(1).getIntoNodePath()
             if (pickedObj.name != "plane"):
                 title.text = pickedObj.name if pickedObj.name != "" else "Selected Clade Has No Name"
                 global selectedCladeName

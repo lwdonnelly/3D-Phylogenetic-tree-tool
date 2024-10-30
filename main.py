@@ -12,7 +12,7 @@ from direct.gui.DirectLabel import DirectLabel, BillboardEffect
 from direct.gui.DirectOptionMenu import DirectOptionMenu
 from direct.showbase.ShowBase import ShowBase, TextFont
 from panda3d.core import Filename, InternalName, ConfigVariableString, PandaNode, CollisionNode, CollisionRay, \
-    CollisionHandlerEvent, CollisionTraverser, CollisionHandlerQueue
+    CollisionHandlerEvent, CollisionTraverser, CollisionHandlerQueue, GeoMipTerrain, CardMaker
 from panda3d.core import GeomVertexArrayFormat, GeomVertexFormat
 from panda3d.core import Geom, GeomNode, GeomTrifans, GeomTristrips
 from panda3d.core import GeomVertexReader, GeomVertexWriter
@@ -46,10 +46,7 @@ girthModifier = pow((1.0 + (depth * 40.0)), (1.0/depth))
 
 phyloTree.ladderize()
 Phylo.draw_ascii(phyloTree)
-print(girthModifier)
-print(depth)
 selectedCladeName = None
-
 title = OnscreenText(text="Click on a branch for clade name",
                      style=1, fg=(1, 1, 1, 1), parent=base.a2dBottomCenter,
                      pos=(0, 0.1), scale=.08, mayChange=True)
@@ -332,23 +329,6 @@ class MyTapper(DirectObject):
 
         taskMgr.add(self.move, "moveTask")
 
-        self.numIterations = 2
-        self.numCopies = 2
-
-        self.upDownEvent = OnscreenText(
-            text="Up/Down: Increase/Decrease the number of iterations (" + str(
-                self.numIterations) + ")",
-            parent=base.a2dTopLeft, align=TextNode.ALeft,
-            style=1, fg=(1, 1, 1, 1), pos=(0.06, -0.22),
-            scale=.05, mayChange=True)
-
-        self.leftRightEvent = OnscreenText(
-            text="Left/Right: Increase/Decrease branching (" + str(
-                self.numCopies) + ")",
-            parent=base.a2dTopLeft, align=TextNode.ALeft,
-            style=1, fg=(1, 1, 1, 1), pos=(0.06, -0.28),
-            scale=.05, mayChange=True)
-
         handler = CollisionHandlerQueue()
         traverser = CollisionTraverser('traverser name')
 
@@ -362,6 +342,12 @@ class MyTapper(DirectObject):
         base.cTrav = traverser
         base.cHandler = handler
         base.pickerRay = pickerRay
+
+        cm = CardMaker("plane")
+        cm.setFrame(-2560, 2560, -2560, 2560)  # set the size here
+        cm.setColor(74.0, 103.0, 65.0, 1.0)
+        plane = render.attachNewNode(cm.generate())
+        plane.setP(-90.)
         
 
     # Records the state of the arrow keys
@@ -394,8 +380,14 @@ class MyTapper(DirectObject):
 
         bodydata = GeomVertexData("body vertices", self.format, Geom.UHStatic)
 
+        global depth
+        global girthModifier
+        depth = max(phyloTree.depths(unit_branch_lengths=True).values())
+        # calculate modifier for a leaf node thickness of .025
+        girthModifier = pow((1.0 + (depth * 40.0)), (1.0 / depth))
+
         treeNodePath = NodePath("Tree Holder")
-        makeFractalTree(bodydata, treeNodePath, LVector3(4, 4, 7), LVector3(0, 0, 0))
+        makeFractalTree(bodydata, treeNodePath, LVector3(depth, depth, depth * 2), LVector3(0, 0, 0))
 
         treeNodePath.setTexture(self.barkTexture, 1)
         treeNodePath.reparentTo(render)
@@ -404,7 +396,7 @@ class MyTapper(DirectObject):
         bodydata = GeomVertexData("body vertices", self.format, Geom.UHStatic)
 
         randomPlace = LVector3(
-            200 * random.random() - 100, 200 * random.random() - 100, 0)
+            random.randint(-2560, 2560), random.randint(-2560, 2560), 0)
         # randomPlace.normalize()
 
         treeNodePath = NodePath("Tree Holder")
@@ -413,8 +405,13 @@ class MyTapper(DirectObject):
         if selectedCladeName is not None and selectedCladeName != "":
             rootClade = findCladeByName(selectedCladeName)
 
-        makeFractalTree(bodydata, treeNodePath, LVector3(
-            4, 4, 7), rootClade.name, randomPlace, rootClade)
+        global depth
+        global girthModifier
+        depth = max(rootClade.depths(unit_branch_lengths=True).values())
+        # calculate modifier for a leaf node thickness of .025
+        girthModifier = pow((1.0 + (depth * 40.0)), (1.0 / depth))
+
+        makeFractalTree(bodydata, treeNodePath, LVector3(depth, depth, depth * 2), rootClade.name, randomPlace, rootClade)
 
         treeNodePath.setTexture(self.barkTexture, 1)
         treeNodePath.reparentTo(render)
@@ -466,9 +463,10 @@ class MyTapper(DirectObject):
             # This is so we get the closest object
             base.cHandler.sortEntries()
             pickedObj = base.cHandler.getEntry(0).getIntoNodePath()
-            title.text = pickedObj.name if pickedObj.name != "" else "Selected Clade Has No Name"
-            global selectedCladeName
-            selectedCladeName = pickedObj.name
+            if (pickedObj.name != "plane"):
+                title.text = pickedObj.name if pickedObj.name != "" else "Selected Clade Has No Name"
+                global selectedCladeName
+                selectedCladeName = pickedObj.name
 
     def move(self, task):
         if isMenuOpen:
@@ -482,17 +480,17 @@ class MyTapper(DirectObject):
         # If the camera-right key is pressed, move camera right.
 
         if self.keyMap["move-left"]:
-            camera.setX(camera, -20 * dt)
+            camera.setX(camera, -150 * dt)
         if self.keyMap["move-right"]:
-            camera.setX(camera, +20 * dt)
+            camera.setX(camera, +150 * dt)
         if self.keyMap["move-forward"]:
-            camera.setY(camera, +20 * dt)
+            camera.setY(camera, +150 * dt)
         if self.keyMap["move-back"]:
-            camera.setY(camera, -20 * dt)
+            camera.setY(camera, -150 * dt)
         if self.keyMap["move-up"]:
-            camera.setZ(camera, +20 * dt)
+            camera.setZ(camera, +150 * dt)
         if self.keyMap["move-down"]:
-            camera.setZ(camera, -20 * dt)
+            camera.setZ(camera, -150 * dt)
 
         md = base.win.getPointer(0)
         x = md.getX()
